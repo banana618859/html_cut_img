@@ -1,0 +1,100 @@
+<!--
+ * @Descripttion: 
+ * @Author: yizheng.yuan
+ * @Date: 2021-01-31 21:33:14
+ * @LastEditors: yizheng.yuan
+ * @LastEditTime: 2021-01-31 23:16:53
+-->
+<html>
+
+<head>
+  <title>demo</title>
+</head>
+
+<body>
+  <div>
+    <input type="file" />
+  </div>
+  <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+  <script>
+    $('input[type=file]').change(function () {
+      var file = this.files[0];
+      
+      var reader = new FileReader();
+      reader.onload = function () {
+        // 通过 reader.result 来访问生成的 DataURL
+        var url = reader.result;
+        console.log('reader:', reader);
+        setImageURL(url);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    var image = new Image();
+    function setImageURL(url) {
+      image.src = url;
+      // $('body').append(image);
+      setTimeout(()=>{
+        console.log('image.naturalHeight:',image.naturalWidth,image.naturalHeight);
+        cutImg(image.naturalWidth,image.naturalHeight)
+      },1000)
+    }
+
+    function cutImg(width,height) {
+      // 以下四个参数由第三步获得
+      var x=0,y=0,h=200;
+        var canvas = $('<canvas width="' + width + '" height="' + h + '"></canvas>')[0];
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(image, x, y, width, height, 0, 0, width, height);
+        $(document.body).append(canvas);
+
+        var x=0,y=h;
+        var canvas2 = $('<canvas style="margin-top:10px" width="' + width + '" height="' + height + '"></canvas>')[0];
+        var ctx2 = canvas2.getContext('2d');
+        ctx2.drawImage(image, x, y, width, height, 0, 0, width, height);
+        $(document.body).append(canvas2);
+
+        setTimeout(()=>{
+          var img1 = canvasToImg(canvas)
+          var img2 = canvasToImg(canvas2)
+          var fd=new FormData();
+          fd.append('file',img1);
+          fd.append('file2',img2);
+          fd.append('userId',4);
+          fd.append('username','yiz');
+          $.ajax({
+              url:"/api/fileUpload",
+              type:"post",
+              data: fd,
+              processData: false,   // jQuery不要去处理发送的数据
+              contentType: false,   // jQuery不要去设置Content-Type请求头
+              success:function(rel){
+                console.log('rel:',rel);
+              },
+              fail:(err)=>{
+                console.log('err:',err);
+              }
+          });
+        },1000)
+      
+    }
+
+    function canvasToImg(canvasObj){
+      var data=canvasObj.toDataURL();
+
+      // dataURL 的格式为 “data:image/png;base64,****”,逗号之前都是一些说明性的文字，我们只需要逗号之后的就行了
+      data=data.split(',')[1];
+      data=window.atob(data);
+      var ia = new Uint8Array(data.length);
+      for (var i = 0; i < data.length; i++) {
+          ia[i] = data.charCodeAt(i);
+      };
+
+      // canvas.toDataURL 返回的默认格式就是 image/png
+      var blob=new Blob([ia], {type:"image/png"});
+      return blob;
+    }
+  </script>
+</body>
+
+</html>
